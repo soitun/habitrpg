@@ -139,13 +139,6 @@
 <style lang='scss' scoped>
   @import '~@/assets/scss/colors.scss';
 
-  @media only screen and (max-width : 750px) {
-    .login-button {
-      margin: 0 auto !important;
-      margin-top: 18px !important;
-    }
-  }
-
   .habitica-logo {
     height: 64px;
     margin: 28px auto 0px auto;
@@ -159,13 +152,16 @@
   }
 
   .btn-primary.pull-right {
-    height: 2.5em;
+    line-height: 2.25;
     margin: auto 0px auto auto;
+    &:focus, :active {
+      border: 2px solid $purple-400;
+    }
   }
 
   nav.navbar {
     background: $purple-100 url(~@/assets/svg/for-css/bits.svg) right no-repeat;
-    padding-left: 25px;
+    padding-left: 24px;
     padding-right: 12.5px;
     height: 56px;
     box-shadow: 0 1px 2px 0 rgba($black, 0.24);
@@ -263,6 +259,16 @@
       .dropdown-item {
         border-radius: 0px !important;
       }
+    }
+  }
+
+  @media only screen and (max-width : 750px) {
+    .login-button {
+      margin: 0 auto !important;
+      margin-top: 18px !important;
+    }
+    .habitica-logo {
+      margin: 4px auto 0px auto;
     }
   }
 </style>

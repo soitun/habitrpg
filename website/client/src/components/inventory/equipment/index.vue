@@ -66,6 +66,7 @@
             :right="true"
             :hide-icon="false"
             :inline-dropdown="false"
+            :direct-select="true"
             @select="groupBy = $event"
           >
             <template #item="{ item }">
@@ -105,7 +106,7 @@
         </div>
         <div slot="drawer-header">
           <div class="drawer-tab-container">
-            <div class="clearfix">
+            <div class="clearfix mb-2">
               <toggle-switch
                 class="float-right align-with-tab"
                 :label="$t(costumeMode ? 'useCostume' : 'autoEquipBattleGear')"

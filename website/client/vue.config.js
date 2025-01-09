@@ -3,6 +3,7 @@ const path = require('path');
 const webpack = require('webpack');
 const nconf = require('nconf');
 const vueTemplateCompiler = require('vue-template-babel-compiler');
+const MomentLocalesPlugin = require('moment-locales-webpack-plugin');
 const setupNconf = require('../server/libs/setupNconf');
 const pkg = require('./package.json');
 
@@ -28,6 +29,9 @@ const envVars = [
   'AMPLITUDE_KEY',
   'LOGGLY_CLIENT_TOKEN',
   'TRUSTED_DOMAINS',
+  'TIME_TRAVEL_ENABLED',
+  'DEBUG_ENABLED',
+  'CONTENT_SWITCHOVER_TIME_OFFSET',
   // TODO necessary? if yes how not to mess up with vue cli? 'NODE_ENV'
 ];
 
@@ -40,7 +44,44 @@ envVars
 
 const webpackPlugins = [
   new webpack.DefinePlugin(envObject),
-  new webpack.ContextReplacementPlugin(/moment[\\/]locale$/, /^\.\/(NOT_EXISTING)$/),
+  new MomentLocalesPlugin({
+    localesToKeep: ['bg',
+      'cs',
+      'da',
+      'de',
+      'en',
+      'es',
+      'fr',
+      'he',
+      'hu',
+      'id',
+      'it',
+      'ja',
+      'nl',
+      'pl',
+      'pt',
+      'pt-br',
+      'ro',
+      'ru',
+      'sk',
+      'sv',
+      'tr',
+      'uk',
+      'zh-cn',
+      'zh-tw',
+    ],
+  }),
+  new webpack.IgnorePlugin({
+    checkResource (resource, context) {
+      if ((context.includes('sinon') || resource.includes('sinon') || context.includes('nise')) && nconf.get('TIME_TRAVEL_ENABLED') !== 'true') {
+        return true;
+      }
+      if (context.includes('yargs')) {
+        return true;
+      }
+      return false;
+    },
+  }),
 ];
 
 module.exports = {
@@ -53,7 +94,43 @@ module.exports = {
           dependency: { not: ['url'] },
           type: 'asset/source',
         },
+        {
+          test: /\.js$/,
+          // Exclude transpiling `node_modules`, except `bootstrap-vue/src`
+          exclude: /node_modules\/(?!bootstrap-vue\/src\/)/,
+          use: {
+            loader: 'babel-loader',
+            options: {
+              presets: ['@babel/preset-env'],
+            },
+          },
+        },
+        {
+          test: /\.js$/,
+          // Exclude transpiling `node_modules`, except `bootstrap-vue/src`
+          exclude: /node_modules\/(?!validator)/,
+          use: {
+            loader: 'babel-loader',
+            options: {
+              presets: ['@babel/preset-env'],
+            },
+          },
+        },
       ],
+    },
+    resolve: {
+      fallback: {
+        crypto: false,
+        fs: false,
+        os: false,
+        path: false,
+        stream: false,
+        timers: require.resolve('timers-browserify'),
+      },
+      alias: {
+        // Alias for using source of BootstrapVue
+        'bootstrap-vue$': 'bootstrap-vue/src/index.js',
+      },
     },
     plugins: webpackPlugins,
   },

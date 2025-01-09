@@ -28,6 +28,12 @@
           :item="item"
           :abbreviated="true"
         />
+        <div
+          v-if="item.addlNotes"
+          class="mx-4 mb-3"
+        >
+          {{ item.addlNotes }}
+        </div>
         <quest-rewards :quest="item" />
         <div
           v-if="!item.locked"
@@ -51,12 +57,6 @@
           </div>
           <div class="how-many-to-buy">
             <strong>{{ $t('howManyToBuy') }}</strong>
-          </div>
-          <div
-            v-if="item.addlNotes"
-            class="mb-3"
-          >
-            {{ item.addlNotes }}
           </div>
           <div>
             <number-increment
@@ -82,7 +82,7 @@
           v-if="priceType === 'gems'
             && !enoughCurrency(priceType, item.value * selectedAmountToBuy)
             && !item.locked"
-          class="btn btn-primary"
+          class="btn btn-primary mb-3"
           @click="purchaseGems()"
         >
           {{ $t('purchaseGems') }}
@@ -99,7 +99,7 @@
       </div>
     </div>
     <countdown-banner
-      v-if="item.event"
+      v-if="item.end"
       :end-date="endDate"
     />
     <div
@@ -177,7 +177,6 @@
 
     .inner-content {
       margin: 33px auto auto;
-      padding: 0px 24px;
     }
 
     .item-notes {
@@ -199,7 +198,7 @@
       top: 25px;
       border-radius: 8px;
       background-color: $gray-600;
-      box-shadow: 0 2px 16px 0 rgba(26, 24, 29, 0.32);
+      box-shadow: 0 2px 16px 0 rgba($black, 0.32);
       display: flex;
       align-items: center;
       flex-direction: column;
@@ -209,12 +208,17 @@
     }
 
     button.btn.btn-primary {
-      margin-top: 14px;
-      padding: 4px 16px;
-      height: 32px;
+      margin-top: 16px;
+      padding: 2px 12px;
+      line-height: 1.714;
 
       &:focus {
-        border: 2px solid black;
+        border: 2px solid $purple-400;
+      }
+
+      &:active {
+        border: 2px solid $purple-400;
+        box-shadow: none;
       }
     }
 
@@ -233,8 +237,6 @@
     }
 
     .purchase-amount {
-      margin-top: 24px;
-
       .how-many-to-buy {
         margin-bottom: 16px;
       }
@@ -252,7 +254,7 @@
 
           &.gems {
             color: $green-10;
-            background-color: rgba(36, 204, 143, 0.15);
+            background-color: rgba($green-100, 0.15);
             line-height: 1.4;
             margin: 0 0 0 -4px;
             border-radius: 20px;
@@ -260,7 +262,7 @@
 
           &.gold {
             color: $yellow-5;
-            background-color: rgba(255, 190, 93, 0.15);
+            background-color: rgba($yellow-100, 0.15);
             line-height: 1.4;
             margin: 0 0 0 -4px;
             border-radius: 20px;
@@ -268,7 +270,7 @@
 
           &.hourglasses {
             color: $hourglass-color;
-            background-color: rgba(41, 149, 205, 0.15);
+            background-color: rgba($blue-10, 0.15);
             line-height: 1.4;
             margin: 0 0 0 -4px;
             border-radius: 20px;
@@ -470,7 +472,7 @@ export default {
       return this.icons.gems;
     },
     endDate () {
-      return moment(this.item.event.end);
+      return moment(this.item.end);
     },
   },
   watch: {
@@ -500,38 +502,6 @@ export default {
     },
     hideDialog () {
       this.$root.$emit('bv::hide::modal', 'buy-quest-modal');
-    },
-    getDropIcon (drop) {
-      switch (drop.type) {
-        case 'gear':
-          return `shop_${drop.key}`;
-        case 'hatchingPotions':
-          return `Pet_HatchingPotion_${drop.key}`;
-        case 'food':
-          return `Pet_Food_${drop.key}`;
-        case 'eggs':
-          return `Pet_Egg_${drop.key}`;
-        case 'quests':
-          return `inventory_quest_scroll_${drop.key}`;
-        default:
-          return '';
-      }
-    },
-    getDropName (drop) {
-      switch (drop.type) {
-        case 'gear':
-          return this.content.gear.flat[drop.key].text();
-        case 'quests':
-          return this.content.quests[drop.key].text();
-        case 'hatchingPotions':
-          return this.$t('namedHatchingPotion', { type: this.content.hatchingPotions[drop.key].text() });
-        case 'food':
-          return this.content.food[drop.key].text();
-        case 'eggs':
-          return this.content.eggs[drop.key].text();
-        default:
-          return `Unknown type: ${drop.type}`;
-      }
     },
     purchaseGems () {
       this.$root.$emit('bv::show::modal', 'buy-gems');

@@ -552,8 +552,16 @@
     }
 
     .sign-up {
+      border: 2px solid transparent;
+      box-shadow: 0 1px 3px 0 rgba($black, 0.16), 0 1px 3px 0 rgba($black, 0.24);
       padding-top: 11px;
       padding-bottom: 11px;
+
+      &:focus, &:active {
+        background-color: $blue-50;
+        border: 2px solid $purple-400;
+        box-shadow: 0 3px 6px 0 rgba($black, 0.16), 0 3px 6px 0 rgba($black, 0.24);
+      }
     }
 
     ::-webkit-input-placeholder { /* Chrome/Opera/Safari */
@@ -650,9 +658,9 @@
     .btn-primary {
       width: 411px;
       height: 48px;
-      border-radius: 2px;
+      border-radius: 4px;
       background-color: $purple-400;
-      box-shadow: 0 2px 2px 0 rgba(26, 24, 29, 0.24), 0 1px 4px 0 rgba(26, 24, 29, 0.16);
+      box-shadow: 0 2px 2px 0 rgba($black, 0.24), 0 1px 4px 0 rgba($black, 0.16);
       margin-bottom: 5em;
     }
 
@@ -669,7 +677,7 @@
 
       &:hover {
         background-color: $purple-50;
-        box-shadow: 0 4px 4px 0 rgba(26, 24, 29, 0.16), 0 1px 8px 0 rgba(26, 24, 29, 0.12);
+        box-shadow: 0 4px 4px 0 rgba($black, 0.16), 0 1px 8px 0 rgba($black, 0.12);
       }
     }
 
@@ -781,9 +789,10 @@
 <script>
 import hello from 'hellojs';
 import debounce from 'lodash/debounce';
-import isEmail from 'validator/lib/isEmail';
+import isEmail from 'validator/es/lib/isEmail';
 import { MINIMUM_PASSWORD_LENGTH } from '@/../../common/script/constants';
 import { buildAppleAuthUrl } from '../../libs/auth';
+import sanitizeRedirect from '@/mixins/sanitizeRedirect';
 import googlePlay from '@/assets/images/home/google-play-badge.svg';
 import iosAppStore from '@/assets/images/home/ios-app-store.svg';
 import iphones from '@/assets/images/home/iphones.svg';
@@ -804,6 +813,7 @@ import makeuseof from '@/assets/images/home/make-use-of.svg';
 import thenewyorktimes from '@/assets/images/home/the-new-york-times.svg';
 
 export default {
+  mixins: [sanitizeRedirect],
   data () {
     return {
       icons: Object.freeze({
@@ -923,7 +933,9 @@ export default {
         groupInvite,
       });
 
-      window.location.href = this.$route.query.redirectTo || '/';
+      const redirect = this.sanitizeRedirect(this.$route.query.redirectTo);
+
+      window.location.href = redirect;
     },
     playButtonClick () {
       this.$router.push('/register');

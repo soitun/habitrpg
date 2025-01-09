@@ -14,7 +14,7 @@
           :top="true"
         />
         <div
-          class="top-menu-icon svg-icon user"
+          class="top-menu-icon svg-icon mr-2"
           v-html="icons.user"
         ></div>
       </div>
@@ -35,13 +35,9 @@
         />
       </a>
       <a
-        class="topbar-dropdown-item dropdown-item"
+        class="topbar-dropdown-item dropdown-item dropdown-separated"
         @click="showAvatar('body', 'size')"
       >{{ $t('editAvatar') }}</a>
-      <a
-        class="topbar-dropdown-item dropdown-item dropdown-separated"
-        @click="showAvatar('backgrounds', '2024')"
-      >{{ $t('backgrounds') }}</a>
       <a
         class="topbar-dropdown-item dropdown-item"
         @click="showProfile('profile')"
@@ -109,6 +105,11 @@
 
 <style lang='scss' scoped>
 @import '~@/assets/scss/colors.scss';
+@media only screen and (max-width: 992px) {
+  .item-with-icon.item-user {
+    margin-right: 0px;
+  }
+}
 
 .user-dropdown {
   width: 14.75em;

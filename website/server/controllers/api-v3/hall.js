@@ -288,9 +288,6 @@ api.updateHero = {
       if (plan.dateTerminated !== hero.purchased.plan.dateTerminated) {
         hero.purchased.plan.dateTerminated = plan.dateTerminated;
       }
-      if (plan.perkMonthCount) {
-        hero.purchased.plan.perkMonthCount = plan.perkMonthCount;
-      }
       if (plan.consecutive) {
         if (plan.consecutive.trinkets) {
           const changedHourglassTrinkets = plan.consecutive.trinkets
@@ -313,9 +310,9 @@ api.updateHero = {
         if (plan.consecutive.count) {
           hero.purchased.plan.consecutive.count = plan.consecutive.count; // eslint-disable-line max-len
         }
-        if (plan.consecutive.offset) {
-          hero.purchased.plan.consecutive.offset = plan.consecutive.offset; // eslint-disable-line max-len
-        }
+      }
+      if (plan.cumulativeCount) {
+        hero.purchased.plan.cumulativeCount = plan.cumulativeCount;
       }
     }
 
@@ -383,18 +380,23 @@ api.updateHero = {
       hero.items.pets['Dragon-Hydra'] = 5;
       hero.markModified('items.pets');
     }
-    if (updateData.itemPath && updateData.itemVal && validateItemPath(updateData.itemPath)) {
+    if (updateData.itemPath && (updateData.itemVal || updateData.itemVal === '') && validateItemPath(updateData.itemPath)) {
       // Sanitization at 5c30944 (deemed unnecessary)
       _.set(hero, updateData.itemPath, castItemVal(updateData.itemPath, updateData.itemVal));
       hero.markModified('items');
     }
 
-    if (updateData.auth && updateData.auth.blocked === true) {
-      hero.auth.blocked = updateData.auth.blocked;
-      hero.preferences.sleep = true; // when blocking, have them rest at an inn to prevent damage
-    }
-    if (updateData.auth && updateData.auth.blocked === false) {
-      hero.auth.blocked = false;
+    if (updateData.auth) {
+      if (updateData.auth.blocked === true) {
+        hero.auth.blocked = updateData.auth.blocked;
+        hero.preferences.sleep = true; // when blocking, have them rest at an inn to prevent damage
+      } else if (updateData.auth.blocked === false) {
+        hero.auth.blocked = false;
+      }
+
+      if (updateData.auth.local && updateData.auth.local.email) {
+        hero.auth.local.email = updateData.auth.local.email;
+      }
     }
 
     if (updateData.flags && _.isBoolean(updateData.flags.chatRevoked)) {
