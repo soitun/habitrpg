@@ -40,7 +40,6 @@
       <div class="featuredItems">
         <div
           class="background"
-          :class="{opened: seasonal.opened}"
           :style="{'background-image': imageURLs.background}"
         >
           <div
@@ -54,20 +53,7 @@
             </div>
           </div>
           <div
-            v-if="!seasonal.opened"
-            class="content"
-          >
-            <div class="featured-label with-border closed">
-              <span class="rectangle"></span>
-              <span
-                class="text"
-                v-html="seasonal.notes"
-              ></span>
-              <span class="rectangle"></span>
-            </div>
-          </div>
-          <div
-            v-else-if="seasonal.featured.items.length !== 0"
+            v-if="seasonal.featured.items.length !== 0"
             class="content"
           >
             <div
@@ -135,17 +121,6 @@
         <h2 class="float-left mb-3">
           {{ $t('classArmor') }}
         </h2>
-        <div class="float-right">
-          <span class="dropdown-label">{{ $t('sortBy') }}</span>
-          <select-translated-array
-            :right="true"
-            :value="selectedSortItemsBy"
-            :items="sortItemsBy"
-            :inline-dropdown="false"
-            class="inline"
-            @select="selectedSortItemsBy = $event"
-          />
-        </div>
       </div>
       <div
         v-for="(groupSets, categoryGroup) in getGroupedCategories(categories)"
@@ -174,7 +149,7 @@
             <div class="items">
               <!-- eslint-disable max-len -->
               <shopItem
-                v-for="item in seasonalItems(category, selectedSortItemsBy, searchTextThrottled, viewOptions, hidePinned)"
+                v-for="item in seasonalItems(category, 'AZ', searchTextThrottled, viewOptions, hidePinned)"
                 :key="item.key"
                 :item="item"
                 :price="item.value"
@@ -188,14 +163,7 @@
                   slot="itemBadge"
                   slot-scope="ctx"
                 >
-                  <span
-                    class="badge-top"
-                    @click.prevent.stop="togglePinned(ctx.item)"
-                  >
-                    <pin-badge
-                      :pinned="ctx.item.pinned"
-                    />
-                  </span>
+                  <category-item :item="ctx.item" />
                 </template>
               </shopItem>
             </div>
@@ -203,6 +171,23 @@
         </div>
       </div>
     </div>
+    <buy-quest-modal
+      :item="selectedItemToBuy || {}"
+      :price-type="selectedItemToBuy ? selectedItemToBuy.currency : ''"
+      :with-pin="true"
+    >
+      <template
+        slot="item"
+        slot-scope="ctx"
+      >
+        <item
+          class="flat"
+          :item="ctx.item"
+          :item-content-class="ctx.item.class"
+          :show-popover="false"
+        />
+      </template>
+    </buy-quest-modal>
   </div>
 </template>
 
@@ -227,6 +212,10 @@
       background-color: #edecee;
       display: inline-block;
       padding: 8px;
+
+      > div {
+        margin-right: auto;
+      }
     }
 
     .item-wrapper {
@@ -319,7 +308,7 @@
           position: absolute;
           bottom: -14px;
           margin: 0;
-          left: 60px;
+          left: 32px;
         }
       }
 
@@ -367,14 +356,16 @@ import svgWizard from '@/assets/svg/wizard.svg';
 import svgRogue from '@/assets/svg/rogue.svg';
 import svgHealer from '@/assets/svg/healer.svg';
 
-import SelectTranslatedArray from '@/components/tasks/modal-controls/selectTranslatedArray';
-import FilterSidebar from '@/components/ui/filterSidebar';
+import BuyQuestModal from '../quests/buyQuestModal.vue';
+import CategoryItem from '../market/categoryItem';
 import FilterGroup from '@/components/ui/filterGroup';
+import FilterSidebar from '@/components/ui/filterSidebar';
 import { worldStateMixin } from '@/mixins/worldState';
 
 export default {
   components: {
-    SelectTranslatedArray,
+    BuyQuestModal,
+    CategoryItem,
     FilterGroup,
     FilterSidebar,
     Checkbox,
@@ -407,13 +398,15 @@ export default {
         eyewear: i18n.t('eyewear'),
       }),
 
-      sortItemsBy: ['AZ'],
-      selectedSortItemsBy: 'AZ',
-
       hidePinned: false,
       featuredGearBought: false,
       currentEvent: null,
       backgroundUpdate: new Date(),
+      selectedItemToBuy: null,
+      imageURLs: {
+        background: '',
+        npc: '',
+      },
     };
   },
   computed: {
@@ -484,21 +477,8 @@ export default {
       }
       return [];
     },
-
     anyFilterSelected () {
       return Object.values(this.viewOptions).some(g => g.selected);
-    },
-    imageURLs () {
-      if (!this.seasonal.opened || !this.currentEvent || !this.currentEvent.season) {
-        return {
-          background: 'url(/static/npc/normal/seasonal_shop_closed_background.png)',
-          npc: 'url(/static/npc/normal/seasonal_shop_closed_npc.png)',
-        };
-      }
-      return {
-        background: `url(/static/npc/${this.currentEvent.season}/seasonal_shop_opened_background.png)`,
-        npc: `url(/static/npc/${this.currentEvent.season}/seasonal_shop_opened_npc.png)`,
-      };
     },
   },
   watch: {
@@ -506,7 +486,7 @@ export default {
       this.searchTextThrottled = this.searchText.toLowerCase();
     }, 250),
   },
-  mounted () {
+  async mounted () {
     this.$store.dispatch('common:setTitle', {
       subSection: this.$t('seasonalShop'),
       section: this.$t('shops'),
@@ -516,8 +496,10 @@ export default {
       this.backgroundUpdate = new Date();
     });
 
-    this.triggerGetWorldState();
-    this.currentEvent = _find(this.currentEventList, event => Boolean(['winter', 'spring', 'summer', 'fall'].includes(event.season)));
+    await this.triggerGetWorldState();
+    this.currentEvent = _find(this.currentEventList, event => Boolean(event.season));
+    this.imageURLs.background = `url(/static/npc/${this.currentEvent.season}/seasonal_shop_opened_background.png)`;
+    this.imageURLs.npc = `url(/static/npc/${this.currentEvent.season}/seasonal_shop_opened_npc.png)`;
   },
   beforeDestroy () {
     this.$root.$off('buyModal::boughtItem');
@@ -585,7 +567,12 @@ export default {
       return false;
     },
     itemSelected (item) {
-      this.$root.$emit('buyModal::showItem', item);
+      if (item.type === 'quests') {
+        this.selectedItemToBuy = item;
+        this.$root.$emit('bv::show::modal', 'buy-quest-modal');
+      } else {
+        this.$root.$emit('buyModal::showItem', item);
+      }
     },
   },
 };

@@ -6,6 +6,7 @@ import { mapState } from '@/libs/store';
 import encodeParams from '@/libs/encodeParams';
 import notificationsMixin from '@/mixins/notifications';
 import { CONSTANTS, setLocalSetting } from '@/libs/userlocalManager';
+import * as Analytics from '@/libs/analytics';
 
 const STRIPE_PUB_KEY = process.env.STRIPE_PUB_KEY;
 
@@ -70,6 +71,7 @@ export default {
         giftData,
         gemsBlock,
         sku,
+        g1g1,
       } = data;
       let { url } = data;
 
@@ -78,6 +80,10 @@ export default {
         paymentCompleted: false,
         paymentType: type,
       };
+
+      if (type === 'gift-subscription') {
+        appState.g1g1 = g1g1;
+      }
 
       if (type === 'subscription') {
         appState.subscriptionKey = this.subscriptionPlan || this.subscription.key;
@@ -163,6 +169,9 @@ export default {
         paymentCompleted: false,
         paymentType,
       };
+      if (paymentType === 'gift-subscription') {
+        appState.g1g1 = data.g1g1;
+      }
       if (paymentType === 'subscription') {
         appState.subscriptionKey = sub.key;
       } else if (paymentType === 'groupPlan') {
@@ -197,6 +206,16 @@ export default {
           console.error(checkoutSessionResult.error); // eslint-disable-line
           alert(`Error while redirecting to Stripe: ${checkoutSessionResult.error.message}`);
           throw checkoutSessionResult.error;
+        }
+        if (paymentType === 'groupPlan') {
+          Analytics.track({
+            hitType: 'event',
+            eventName: 'group plan create',
+            eventAction: 'group plan create',
+            eventCategory: 'behavior',
+            demographics: appState.newGroup.demographics,
+            type: appState.newGroup.type,
+          }, { trackOnClient: true });
         }
       } catch (err) {
         console.error('Error while redirecting to Stripe', err); // eslint-disable-line
@@ -369,6 +388,21 @@ export default {
       } catch (e) {
         window.alert(e.response.data.message); // eslint-disable-line no-alert
       }
+    },
+    stripeGroup (options = { group: {}, upgrade: false }) {
+      const paymentData = {
+        subscription: 'group_monthly',
+        coupon: null,
+      };
+
+      if (options.upgrade && options.group._id) {
+        paymentData.groupId = options.group._id;
+        paymentData.group = options.group;
+      } else {
+        paymentData.groupToCreate = options.group;
+      }
+
+      this.redirectToStripe(paymentData);
     },
   },
 };

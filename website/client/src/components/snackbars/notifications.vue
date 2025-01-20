@@ -1,7 +1,6 @@
 <template>
   <div
     class="notifications"
-    :class="notificationsTopPosClass"
     :style="{'--current-scrollY': notificationTopY}"
   >
     <transition-group
@@ -27,7 +26,7 @@
     position: fixed;
     right: 10px;
     width: 350px;
-    z-index: 9999; // to keep it above modal overlays
+    z-index: 999; // to keep it above modal overlays
 
     top: var(--current-scrollY);
 
@@ -104,7 +103,6 @@ export default {
   computed: {
     ...mapState({
       notificationStore: 'notificationStore',
-      userSleeping: 'user.data.preferences.sleep',
       currentEventList: 'worldState.data.currentEventList',
     }),
     currentEvent () {
@@ -112,18 +110,6 @@ export default {
     },
     isEventActive () {
       return Boolean(this.currentEvent?.event);
-    },
-    notificationsTopPosClass () {
-      const base = 'notifications-top-pos-';
-      let modifier = '';
-
-      if (this.userSleeping) {
-        modifier = 'sleeping';
-      } else {
-        modifier = 'normal';
-      }
-
-      return `${base}${modifier} scroll-${this.scrollY}`;
     },
     notificationBannerHeight () {
       let scrollPosToCheck = 56;

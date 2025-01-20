@@ -8,10 +8,13 @@
       :right="true"
       :hide-icon="false"
       :inline-dropdown="false"
+      :direct-select="directSelect"
       @select="selectItem($event)"
     >
       <template #item="{ item }">
-        <span :class="{'dropdown-icon-item': withIcon}">
+        <span
+          :class="{'dropdown-icon-item': withIcon}"
+        >
           <slot
             name="item"
             :item="item"
@@ -35,6 +38,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    directSelect: {
+      type: Boolean,
+      default: false,
+    },
   },
   data () {
     return {
@@ -49,7 +56,3 @@ export default {
   },
 };
 </script>
-
-<style scoped lang="scss">
-
-</style>

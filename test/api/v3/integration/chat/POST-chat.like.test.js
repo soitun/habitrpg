@@ -1,8 +1,10 @@
 import { find } from 'lodash';
 import {
+  generateUser,
   createAndPopulateGroup,
   translate as t,
 } from '../../../../helpers/api-integration/v3';
+import { model as Group } from '../../../../../website/server/models/group';
 
 describe('POST /chat/:chatId/like', () => {
   let user;
@@ -78,5 +80,50 @@ describe('POST /chat/:chatId/like', () => {
 
     const messageToCheck = find(groupWithoutChatLikes.chat, { id: message.message.id });
     expect(messageToCheck.likes[user._id]).to.equal(false);
+  });
+
+  it('validates that the message belongs to the passed group', async () => {
+    const { group: anotherGroup, groupLeader: anotherLeader } = await createAndPopulateGroup({
+      groupDetails: {
+        name: 'Another Guild',
+        type: 'guild',
+        privacy: 'private',
+      },
+      upgradeToGroupPlan: true,
+    });
+
+    const message = await anotherUser.post(`/groups/${groupWithChat._id}/chat`, { message: testMessage });
+    await expect(anotherLeader.post(`/groups/${anotherGroup._id}/chat/${message.message.id}/like`))
+      .to.eventually.be.rejected.and.eql({
+        code: 404,
+        error: 'NotFound',
+        message: t('messageGroupChatNotFound'),
+      });
+  });
+
+  it('does not like a message if the user is not in the group', async () => {
+    const thirdUser = await generateUser();
+
+    const message = await user.post(`/groups/${groupWithChat._id}/chat`, { message: testMessage });
+    await expect(thirdUser.post(`/groups/${groupWithChat._id}/chat/${message.message.id}/like`))
+      .to.eventually.be.rejected.and.eql({
+        code: 404,
+        error: 'NotFound',
+        message: t('groupNotFound'),
+      });
+  });
+
+  it('does not like a message that belongs to a sunset public group', async () => {
+    const message = await anotherUser.post(`/groups/${groupWithChat._id}/chat`, { message: testMessage });
+
+    // Creation API is shut down, we need to simulate an extant public group
+    await Group.updateOne({ _id: groupWithChat._id }, { $set: { privacy: 'public' }, $unset: { 'purchased.plan': 1 } }).exec();
+
+    await expect(user.post(`/groups/${groupWithChat._id}/chat/${message.message.id}/like`))
+      .to.eventually.be.rejected.and.eql({
+        code: 400,
+        error: 'BadRequest',
+        message: t('featureRetired'),
+      });
   });
 });
